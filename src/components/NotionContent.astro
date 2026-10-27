@@ -1,0 +1,39 @@
+---
+import type { PortfolioBlock } from '../lib/types';
+
+interface Props {
+	blocks: PortfolioBlock[];
+	fallback?: string;
+}
+
+const { blocks, fallback = '正文正在整理中。' } = Astro.props;
+---
+
+<div class="notion-content">
+	{blocks.length ? blocks.map((block) => (
+		block.type === 'heading_1' ? <h2>{block.text}</h2> :
+		block.type === 'heading_2' ? <h3>{block.text}</h3> :
+		block.type === 'heading_3' ? <h4>{block.text}</h4> :
+		block.type === 'bulleted_list_item' ? <p class="list-item">• {block.text}</p> :
+		block.type === 'numbered_list_item' ? <p class="list-item">{block.text}</p> :
+		block.type === 'to_do' ? <p class="list-item">{block.checked ? '☑' : '☐'} {block.text}</p> :
+		block.type === 'quote' || block.type === 'callout' ? <blockquote>{block.text}</blockquote> :
+		block.type === 'code' ? <pre><code>{block.text}</code></pre> :
+		block.type === 'divider' ? <hr /> :
+		block.type === 'image' && block.url ? <figure><img src={block.url} alt={block.text} loading="lazy" /><figcaption>{block.text}</figcaption></figure> :
+		block.type === 'bookmark' && block.url ? <a class="bookmark" href={block.url} target="_blank" rel="noreferrer">{block.text || block.url} ↗</a> :
+		<p>{block.text}</p>
+	)) : <p>{fallback}</p>}
+</div>
+
+<style>
+	.notion-content { max-width: 720px; color: var(--muted); font-size: 18px; line-height: 1.75; }
+	.notion-content p { margin: 0 0 1.25em; }
+	.notion-content h2, .notion-content h3, .notion-content h4 { margin: 1.8em 0 .65em; color: var(--paper); line-height: 1.2; }
+	.notion-content h2 { font-size: 36px; } .notion-content h3 { font-size: 28px; } .notion-content h4 { font-size: 22px; }
+	.notion-content blockquote { margin: 1.5em 0; padding: 18px 22px; border-left: 3px solid var(--accent); background: rgba(255,255,255,.04); }
+	.notion-content pre { overflow-x: auto; padding: 20px; background: #080807; border: 1px solid var(--line); color: #ddd9cf; font-size: 14px; }
+	.notion-content img { width: 100%; display: block; } .notion-content figcaption { margin-top: 8px; font-size: 12px; }
+	.notion-content hr { border: 0; border-top: 1px solid var(--line); margin: 40px 0; }
+	.bookmark { display: block; padding: 16px; border: 1px solid var(--line); color: var(--paper); text-decoration: none; }
+</style>

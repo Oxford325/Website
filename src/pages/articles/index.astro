@@ -1,0 +1,43 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { getNotionArticles } from '../../lib/notion';
+
+const feed = await getNotionArticles();
+---
+
+<Layout title="博客 — Oxford" description="技术文章、开发笔记与实验记录。">
+	<main class="listing">
+		<nav><a href="/">← 首页</a><a href="/projects/">作品集</a></nav>
+		<p class="label">BLOG / NOTES</p>
+		<h1>文章与记录</h1>
+		{feed.projects.length ? (
+			<div class="articles">
+				{feed.projects.map((article, index) => (
+					<a href={`/articles/${article.slug}/`}>
+						<span>{String(index + 1).padStart(2, '0')}</span>
+						<div><strong>{article.title}</strong><p>{article.summary || '阅读全文'}</p></div>
+						<small>{article.updatedAt ? new Date(article.updatedAt).toLocaleDateString('zh-CN') : 'ARTICLE'} →</small>
+					</a>
+				))}
+			</div>
+		) : (
+			<div class="empty"><strong>第一篇文章正在路上。</strong><p>在 Notion 新建记录，并将 <code>WebType</code> 设置为 <code>Article</code> 或 <code>Blog</code>，它就会出现在这里。</p></div>
+		)}
+	</main>
+</Layout>
+
+<style>
+	.listing { max-width: 1180px; margin: 0 auto; padding: 48px 28px 140px; }
+	nav { display: flex; justify-content: space-between; } nav a { color: var(--muted); text-decoration: none; font-size: 13px; }
+	.label { margin: 130px 0 20px; color: var(--accent); font-size: 11px; letter-spacing: .18em; }
+	h1 { max-width: 900px; margin: 0 0 80px; font-size: clamp(64px, 11vw, 150px); line-height: .9; letter-spacing: -.07em; }
+	.articles { border-top: 1px solid var(--line); }
+	.articles > a { display: grid; grid-template-columns: 80px 1fr auto; gap: 24px; align-items: center; min-height: 145px; border-bottom: 1px solid var(--line); text-decoration: none; }
+	.articles span, .articles small { color: var(--muted); font-size: 11px; letter-spacing: .1em; }
+	.articles strong { color: var(--paper); font-size: clamp(28px, 4vw, 52px); letter-spacing: -.04em; }
+	.articles p { margin: 8px 0 0; color: var(--muted); }
+	.empty { padding: 50px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+	.empty strong { font-size: clamp(26px, 4vw, 44px); } .empty p { color: var(--muted); line-height: 1.7; }
+	code { color: var(--paper); }
+	@media (max-width: 650px) { .articles > a { grid-template-columns: 36px 1fr; padding: 25px 0; } .articles small { grid-column: 2; } }
+</style>

@@ -1,0 +1,130 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { getGithubProjects } from '../lib/github';
+import { getNotionArticles, getNotionProjects } from '../lib/notion';
+
+const [notionFeed, articleFeed, githubProjects] = await Promise.all([getNotionProjects(), getNotionArticles(), getGithubProjects()]);
+const githubByName = new Map(githubProjects.map((project) => [project.title.toLowerCase(), project]));
+const projects = notionFeed.projects.map((project) => {
+	const github = githubByName.get(project.title.toLowerCase());
+	return github ? { ...project, github: project.github ?? github.github, website: project.website ?? github.website, summary: project.summary || github.summary, tags: project.tags.length ? project.tags : github.tags } : project;
+});
+const featuredProjects = projects.filter((project) => project.featured);
+const visibleProjects = featuredProjects.length ? featuredProjects : projects;
+const recentArticles = articleFeed.projects.slice(0, 3);
+const githubOwner = import.meta.env.GITHUB_OWNER || 'Oxford325';
+---
+
+<Layout title="Oxford — Projects & Notes" description="工程项目、实验记录与技术文章。">
+	<div class="page-shell" id="top">
+		<header class="site-header">
+			<a class="brand" href="/" aria-label="返回首页"><span class="brand-mark">O</span><span>OXFORD / WORKS</span></a>
+			<nav aria-label="主导航">
+				<a href="/projects/">作品集</a><a href="/articles/">博客</a><a href="#about">关于</a><a href={`https://github.com/${githubOwner}`} target="_blank" rel="noreferrer">GitHub ↗</a>
+			</nav>
+		</header>
+
+		<main>
+			<section class="hero" aria-labelledby="hero-title">
+				<p class="eyebrow">ENGINEERING · SYSTEMS · EXPERIMENTS</p>
+				<h1 id="hero-title">把工程，做成<br /><em>可以被看见</em>的作品。</h1>
+				<div class="hero-foot"><p>这里收集正在进行的项目、完成的实验，以及构建它们时留下的思考。</p><a class="round-link" href="#work" aria-label="查看作品">↓</a></div>
+			</section>
+
+			{!notionFeed.connected && <aside class="sync-note" role="status"><span>PREVIEW MODE</span><p>{notionFeed.message}</p></aside>}
+
+			<section class="work" id="work" aria-labelledby="work-title">
+				<div class="section-heading"><p>01 / PORTFOLIO</p><h2 id="work-title">作品集</h2><a href="/projects/">查看全部 →</a></div>
+				<div class="project-grid">
+					{visibleProjects.map((project, index) => (
+						<article class="project-card">
+							<div class="card-top"><span>{String(index + 1).padStart(2, '0')}</span><span>{project.status || project.type}</span></div>
+							{project.cover ? <img src={project.cover} alt="" loading="lazy" /> : <div class="card-visual" aria-hidden="true"><span>{project.title.slice(0, 2)}</span></div>}
+							<div class="card-body">
+								<h3>{project.title}</h3><p>{project.summary || '项目内容正在整理中。'}</p>
+								<div class="card-meta">
+									<div class="tags">{project.tags.length ? project.tags.map((tag) => <span>{tag}</span>) : <span>PROJECT</span>}</div>
+									<a href={`/projects/${project.slug}/`}>了解项目 →</a>
+								</div>
+							</div>
+						</article>
+					))}
+				</div>
+			</section>
+
+			<section class="blog" id="blog" aria-labelledby="blog-title">
+				<div class="section-heading"><p>02 / BLOG</p><h2 id="blog-title">博客与笔记</h2><a href="/articles/">进入博客 →</a></div>
+				{recentArticles.length ? (
+					<div class="article-list">
+						{recentArticles.map((article, index) => (
+							<a href={`/articles/${article.slug}/`}><span>{String(index + 1).padStart(2, '0')}</span><div><h3>{article.title}</h3><p>{article.summary || '阅读全文'}</p></div><small>READ →</small></a>
+						))}
+					</div>
+				) : (
+					<a class="blog-empty" href="/articles/"><span>NEW WRITING SPACE</span><strong>思考不止留在代码里。</strong><p>技术文章、开发笔记和实验记录将在这里独立成篇。进入博客 →</p></a>
+				)}
+			</section>
+
+			<section class="about" id="about" aria-labelledby="about-title">
+				<p>03 / ABOUT</p><div><h2 id="about-title">持续构建，<br />持续记录。</h2><p class="about-copy">作品集呈现已经完成和正在推进的项目；博客沉淀过程中的判断、方法与技术细节。两类内容都在 Notion 中维护，由 Astro 组织成快速的阅读体验。</p></div>
+			</section>
+		</main>
+
+		<footer><span>© {new Date().getFullYear()} OXFORD</span><span>ASTRO × NOTION × GITHUB</span><a href="#top">BACK TO TOP ↑</a></footer>
+	</div>
+</Layout>
+
+<style>
+	.page-shell { max-width: 1500px; margin: 0 auto; padding: 0 32px; overflow: hidden; }
+	.site-header { min-height: 96px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--line); font-size: 12px; letter-spacing: .12em; }
+	.brand { display: flex; align-items: center; gap: 12px; text-decoration: none; font-weight: 700; }
+	.brand-mark { width: 30px; height: 30px; display: grid; place-items: center; color: var(--ink); background: var(--accent); border-radius: 50%; }
+	nav { display: flex; gap: 30px; } nav a { text-decoration: none; color: var(--muted); transition: color .2s; } nav a:hover { color: var(--paper); }
+	.hero { min-height: 710px; padding: 110px 0 50px; display: flex; flex-direction: column; justify-content: space-between; }
+	.eyebrow, .section-heading p, .about > p { margin: 0; color: var(--accent); font-size: 11px; letter-spacing: .18em; font-weight: 700; }
+	.hero h1 { max-width: 1150px; margin: 24px 0 60px; font-size: clamp(58px, 9.3vw, 144px); line-height: .9; letter-spacing: -.07em; font-weight: 620; }
+	.hero h1 em { color: transparent; -webkit-text-stroke: 1px var(--paper); font-style: normal; }
+	.hero-foot { display: flex; align-items: end; justify-content: space-between; border-top: 1px solid var(--line); padding-top: 24px; }
+	.hero-foot p { max-width: 440px; margin: 0; color: var(--muted); font-size: 16px; line-height: 1.7; }
+	.round-link { width: 58px; height: 58px; display: grid; place-items: center; border: 1px solid var(--line); border-radius: 50%; text-decoration: none; font-size: 22px; }
+	.sync-note { margin: 0 0 80px; padding: 18px 22px; display: flex; gap: 28px; align-items: center; border: 1px solid rgba(255, 92, 53, .45); background: rgba(255, 92, 53, .06); }
+	.sync-note span { flex: 0 0 auto; color: var(--accent); font-size: 10px; letter-spacing: .18em; } .sync-note p { margin: 0; color: #c5c2b9; font-size: 13px; }
+	.work { padding: 90px 0 140px; }
+	.section-heading { display: grid; grid-template-columns: 1fr 2fr auto; align-items: end; margin-bottom: 54px; }
+	.section-heading h2 { margin: 0; font-size: clamp(42px, 5vw, 76px); line-height: 1; letter-spacing: -.05em; } .section-heading > a { color: var(--muted); font-size: 11px; letter-spacing: .1em; text-decoration: none; }
+	.project-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); border-top: 1px solid var(--line); border-left: 1px solid var(--line); }
+	.project-card { min-width: 0; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); padding: 22px; }
+	.card-top { display: flex; justify-content: space-between; margin-bottom: 22px; color: var(--muted); font-size: 10px; letter-spacing: .15em; }
+	.card-visual, .project-card img { width: 100%; aspect-ratio: 16 / 9; } .project-card img { object-fit: cover; filter: saturate(.8); }
+	.card-visual { display: grid; place-items: center; overflow: hidden; background: #dad5c8; color: #171713; position: relative; }
+	.card-visual::before { content: ''; position: absolute; width: 62%; aspect-ratio: 1; border: 1px solid rgba(17,17,15,.35); border-radius: 50%; }
+	.card-visual::after { content: ''; position: absolute; width: 38%; height: 120%; background: var(--accent); transform: rotate(28deg); mix-blend-mode: multiply; }
+	.card-visual span { position: relative; z-index: 1; font-size: clamp(64px, 11vw, 150px); line-height: 1; letter-spacing: -.1em; font-weight: 800; }
+	.card-body { padding: 28px 4px 8px; } .card-body h3 { margin: 0; font-size: clamp(30px, 4vw, 54px); letter-spacing: -.045em; }
+	.card-body > p { min-height: 48px; margin: 14px 0 26px; color: var(--muted); line-height: 1.6; }
+	.card-meta { display: flex; align-items: center; justify-content: space-between; gap: 20px; } .tags { display: flex; flex-wrap: wrap; gap: 8px; }
+	.tags span { padding: 6px 9px; border: 1px solid var(--line); border-radius: 100px; color: var(--muted); font-size: 9px; letter-spacing: .12em; }
+	.card-meta a, .soon { color: var(--paper); font-size: 11px; letter-spacing: .08em; text-decoration: none; } .soon { color: var(--muted); }
+	.blog { padding: 120px 0 150px; border-top: 1px solid var(--line); }
+	.article-list { border-top: 1px solid var(--line); }
+	.article-list > a { display: grid; grid-template-columns: 80px 1fr auto; gap: 24px; align-items: center; min-height: 145px; border-bottom: 1px solid var(--line); text-decoration: none; }
+	.article-list span, .article-list small { color: var(--muted); font-size: 10px; letter-spacing: .14em; }
+	.article-list h3 { margin: 0; font-size: clamp(28px, 4vw, 54px); letter-spacing: -.045em; }
+	.article-list p { margin: 8px 0 0; color: var(--muted); }
+	.blog-empty { min-height: 330px; padding: 45px; display: flex; flex-direction: column; justify-content: space-between; color: var(--ink); background: var(--accent); text-decoration: none; }
+	.blog-empty span { font-size: 10px; letter-spacing: .18em; }
+	.blog-empty strong { max-width: 900px; font-size: clamp(46px, 7vw, 105px); line-height: .92; letter-spacing: -.065em; }
+	.blog-empty p { margin: 0; font-size: 14px; }
+	.about { display: grid; grid-template-columns: 1fr 2fr; padding: 120px 0 160px; border-top: 1px solid var(--line); }
+	.about h2 { margin: 0 0 42px; font-size: clamp(52px, 7.5vw, 108px); line-height: .96; letter-spacing: -.065em; }
+	.about-copy { max-width: 650px; margin: 0; color: var(--muted); font-size: clamp(17px, 2vw, 23px); line-height: 1.65; }
+	footer { min-height: 92px; display: grid; grid-template-columns: 1fr 1fr auto; align-items: center; border-top: 1px solid var(--line); color: var(--muted); font-size: 10px; letter-spacing: .12em; } footer a { text-decoration: none; }
+	@media (max-width: 760px) {
+		.page-shell { padding: 0 18px; } .site-header { min-height: 76px; } .brand span:last-child { display: none; } nav { gap: 15px; }
+		.hero { min-height: 620px; padding-top: 88px; } .hero h1 { font-size: clamp(54px, 17vw, 88px); } .hero-foot { align-items: center; } .hero-foot p { max-width: 270px; font-size: 14px; }
+		.section-heading { grid-template-columns: 1fr auto; row-gap: 15px; } .section-heading p { grid-column: 1 / -1; } .project-grid { grid-template-columns: 1fr; }
+		.project-card { padding: 14px; } .card-body > p { min-height: 0; } .article-list > a { grid-template-columns: 40px 1fr; padding: 24px 0; } .article-list small { grid-column: 2; }
+		.blog-empty { min-height: 360px; padding: 28px 20px; } .about { grid-template-columns: 1fr; gap: 50px; }
+		footer { grid-template-columns: 1fr auto; } footer span:nth-child(2) { display: none; }
+	}
+</style>

@@ -1,0 +1,39 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import NotionContent from '../../components/NotionContent.astro';
+import { getNotionArticles, getNotionPageContent } from '../../lib/notion';
+import type { PortfolioBlock, PortfolioProject } from '../../lib/types';
+
+export async function getStaticPaths() {
+	const feed = await getNotionArticles();
+	return Promise.all(feed.projects.map(async (article) => ({
+		params: { slug: article.slug },
+		props: { article, blocks: await getNotionPageContent(article.id) },
+	})));
+}
+
+interface Props { article: PortfolioProject; blocks: PortfolioBlock[] }
+const { article, blocks } = Astro.props;
+---
+
+<Layout title={`${article.title} — Oxford Blog`} description={article.summary}>
+	<article class="article-page">
+		<a class="back" href="/articles/">← 返回博客</a>
+		<header>
+			<p>BLOG / {article.updatedAt ? new Date(article.updatedAt).toLocaleDateString('zh-CN') : 'NOTE'}</p>
+			<h1>{article.title}</h1>
+			{article.summary && <p class="summary">{article.summary}</p>}
+		</header>
+		<div class="body"><NotionContent blocks={blocks} fallback="文章正文正在整理中。" /></div>
+	</article>
+</Layout>
+
+<style>
+	.article-page { max-width: 1080px; margin: 0 auto; padding: 48px 28px 140px; }
+	.back { color: var(--muted); text-decoration: none; font-size: 13px; }
+	header { padding: 130px 0 80px; border-bottom: 1px solid var(--line); }
+	header > p:first-child { color: var(--accent); font-size: 11px; letter-spacing: .17em; }
+	h1 { max-width: 960px; margin: 22px 0 30px; font-size: clamp(58px, 10vw, 130px); line-height: .92; letter-spacing: -.065em; }
+	.summary { max-width: 720px; color: var(--muted); font-size: clamp(18px, 2.4vw, 27px); line-height: 1.6; }
+	.body { display: flex; justify-content: center; padding-top: 75px; }
+</style>

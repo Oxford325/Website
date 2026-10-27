@@ -1,0 +1,45 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import NotionContent from '../../components/NotionContent.astro';
+import { getNotionPageContent, getNotionProjects } from '../../lib/notion';
+import type { PortfolioBlock, PortfolioProject } from '../../lib/types';
+
+export async function getStaticPaths() {
+	const feed = await getNotionProjects();
+	return Promise.all(feed.projects.map(async (project) => ({
+		params: { repo: project.slug },
+		props: { project, blocks: await getNotionPageContent(project.id) },
+	})));
+}
+
+interface Props { project: PortfolioProject; blocks: PortfolioBlock[] }
+const { project, blocks } = Astro.props;
+---
+
+<Layout title={`${project.title} — Oxford`} description={project.summary}>
+	<main class="project-page">
+		<a class="back" href="/projects/">← 全部作品</a>
+		<header>
+			<p>{project.type} / {project.status || 'IN PROGRESS'}</p>
+			<h1>{project.title}</h1>
+			<p class="summary">{project.summary || '项目内容正在整理中。'}</p>
+			<div class="actions">
+				{project.website && <a href={project.website} target="_blank" rel="noreferrer">访问网站 ↗</a>}
+				{project.github && <a href={project.github} target="_blank" rel="noreferrer">查看代码 ↗</a>}
+			</div>
+		</header>
+		<section><span>PROJECT NOTE</span><NotionContent blocks={blocks} fallback={project.summary || '在 Notion 的项目页面正文中添加内容后，这里会展示完整的项目介绍。'} /></section>
+	</main>
+</Layout>
+
+<style>
+	.project-page { max-width: 1180px; margin: 0 auto; padding: 48px 28px 140px; }
+	.back { color: var(--muted); text-decoration: none; font-size: 13px; }
+	header { padding: 130px 0 100px; border-bottom: 1px solid var(--line); }
+	header > p:first-child, section span { color: var(--accent); font-size: 11px; letter-spacing: .17em; }
+	h1 { margin: 22px 0 30px; font-size: clamp(72px, 14vw, 190px); line-height: .85; letter-spacing: -.08em; }
+	.summary { max-width: 720px; color: var(--muted); font-size: clamp(18px, 2.4vw, 28px); line-height: 1.55; }
+	.actions { display: flex; gap: 12px; margin-top: 38px; }
+	.actions a { padding: 12px 16px; border: 1px solid var(--line); text-decoration: none; font-size: 12px; }
+	section { display: grid; grid-template-columns: 1fr 2fr; gap: 40px; padding-top: 70px; }
+</style>

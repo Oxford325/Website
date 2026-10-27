@@ -1,0 +1,15 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout title="关于 — Oxford">
+	<main><a href="/">← 返回首页</a><p class="label">ABOUT THIS SITE</p><h1>持续构建，<br />持续记录。</h1><p class="copy">作品数据由 Notion 维护，源代码和 README 来自 GitHub，Astro 将它们生成为快速、清晰的静态页面。</p></main>
+</Layout>
+
+<style>
+	main { max-width: 1180px; margin: 0 auto; padding: 48px 28px 140px; }
+	a { color: var(--muted); text-decoration: none; font-size: 13px; }
+	.label { margin: 130px 0 20px; color: var(--accent); font-size: 11px; letter-spacing: .18em; }
+	h1 { margin: 0 0 55px; font-size: clamp(64px, 11vw, 150px); line-height: .92; letter-spacing: -.07em; }
+	.copy { max-width: 720px; color: var(--muted); font-size: clamp(19px, 2.4vw, 28px); line-height: 1.65; }
+</style>
