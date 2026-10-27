@@ -19,5 +19,8 @@
     "@notionhq/client": "^5.28.0",
     "@octokit/rest": "^22.0.1",
     "astro": "^7.4.2"
+  },
+  "devDependencies": {
+    "wrangler": "^4.154.0"
   }
 }
